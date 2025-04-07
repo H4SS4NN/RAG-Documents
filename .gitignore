@@ -1,0 +1,45 @@
+# Dossiers et fichiers générés
+my_faiss_index/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+venv/
+env/
+ENV/
+
+# Fichiers de configuration locaux
+.env
+.env.local
+
+# Fichiers de logs
+*.log
+
+# Fichiers de cache
+.cache/
+.pytest_cache/
+
+# Fichiers de l'IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.DS_Store
+
+# Fichiers de données volumineux
+*.pdf
+*.docx
+*.csv
+*.json
+*.html
+*.ppt
+*.pptx
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
