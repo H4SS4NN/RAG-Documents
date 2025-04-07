@@ -1,0 +1,11 @@
+langchain
+langchain-community
+faiss-cpu
+tqdm
+python-dotenv
+ollama
+langchain-ollama
+pypdf
+unstructured
+python-docx
+pandas 
