@@ -1,61 +1,66 @@
-from langchain.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
-from langchain_community.llms import Ollama
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_ollama import OllamaLLM
 import os
 
 def main():
-    # Vérifier si l'index existe
+    # Vérifier si l'index FAISS existe
     if not os.path.exists("my_faiss_index"):
-        print("L'index FAISS n'existe pas. Veuillez d'abord exécuter index_documents.py")
+        print("❌ L'index FAISS n'existe pas. Veuillez d'abord exécuter index_documents.py")
         return
 
-    # Charger l'index FAISS
     print("Chargement de l'index FAISS...")
-    embeddings = OllamaEmbeddings(model="mistral")
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore = FAISS.load_local(
-        "my_faiss_index", 
+        "my_faiss_index",
         embeddings,
         allow_dangerous_deserialization=True
     )
 
-    # Créer le prompt personnalisé
-    template = """Utilise uniquement les informations suivantes pour répondre à la question. 
-    Si la réponse n'est pas dans les informations fournies, dis simplement "Je ne peux pas répondre à cette question avec les informations dont je dispose."
-
-    Contexte: {context}
-
-    Question: {question}
-
-    Réponse: """
-
-    QA_CHAIN_PROMPT = PromptTemplate.from_template(template)
-
-    # Créer la chaîne de questions-réponses
-    print("Création de la chaîne de questions-réponses...")
-    llm = Ollama(model="mistral")
+    # Créer la chaîne de question-réponse
+    llm = OllamaLLM(model="mistral")
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
-        retriever=vectorstore.as_retriever(),
-        chain_type_kwargs={"prompt": QA_CHAIN_PROMPT}
+        retriever=vectorstore.as_retriever(search_kwargs={"k": 5}),
+        return_source_documents=True
     )
 
-    # Interface utilisateur
-    print("\nSystème RAG sur la Seconde Guerre mondiale")
-    print("Tapez 'quit' pour quitter")
-    
+    print("\n💬 Posez vos questions (tapez 'quit' pour quitter):")
     while True:
-        query = input("\nVotre question: ")
+        query = input("\nQuestion: ")
         if query.lower() == 'quit':
             break
-            
-        try:
-            result = qa_chain.invoke({"query": query})
-            print(f"\nRéponse: {result['result']}")
-        except Exception as e:
-            print(f"Erreur: {str(e)}")
+
+        # Récupérer les documents pertinents
+        relevant_docs = vectorstore.similarity_search(query, k=5)
+        
+        # Afficher le contexte qui sera utilisé
+        print("\n📚 Contexte utilisé pour la réponse:")
+        for i, doc in enumerate(relevant_docs, 1):
+            source = doc.metadata.get("source", "Inconnu")
+            page = doc.metadata.get("page", "N/A")
+            print(f"\n{i}. Document: {source}")
+            if page != "N/A":
+                print(f"   Page: {page}")
+            print(f"   Extrait: {doc.page_content[:200]}...")
+        
+        # Générer la réponse
+        print("\n🤖 Génération de la réponse...")
+        result = qa_chain.invoke({"query": query})
+        print("\nRéponse:", result["result"])
+        
+        # Afficher les sources utilisées
+        if result["source_documents"]:
+            print("\n📖 Sources utilisées:")
+            for i, doc in enumerate(result["source_documents"], 1):
+                source = doc.metadata.get("source", "Inconnu")
+                page = doc.metadata.get("page", "N/A")
+                print(f"\n{i}. Document: {source}")
+                if page != "N/A":
+                    print(f"   Page: {page}")
+                print(f"   Extrait: {doc.page_content[:200]}...")
 
 if __name__ == "__main__":
     main() 

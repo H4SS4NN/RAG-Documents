@@ -9,6 +9,7 @@ from langchain_community.document_loaders import (
     UnstructuredMarkdownLoader,
     UnstructuredPowerPointLoader
 )
+from langchain.schema import Document
 
 def load_documents(data_dir="data"):
     """Charge tous les documents du dossier data, quel que soit leur format"""
@@ -19,21 +20,62 @@ def load_documents(data_dir="data"):
         
         try:
             if filename.endswith(".txt"):
-                documents.extend(TextLoader(file_path).load())
+                loader = TextLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "text"
+                documents.extend(docs)
             elif filename.endswith(".pdf"):
-                documents.extend(PyPDFLoader(file_path).load())
+                loader = PyPDFLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "pdf"
+                    doc.metadata["page"] = doc.metadata.get("page", "?")
+                documents.extend(docs)
             elif filename.endswith((".doc", ".docx")):
-                documents.extend(UnstructuredWordDocumentLoader(file_path).load())
+                loader = UnstructuredWordDocumentLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "word"
+                documents.extend(docs)
             elif filename.endswith(".csv"):
-                documents.extend(CSVLoader(file_path).load())
+                loader = CSVLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "csv"
+                documents.extend(docs)
             elif filename.endswith((".html", ".htm")):
-                documents.extend(UnstructuredHTMLLoader(file_path).load())
+                loader = UnstructuredHTMLLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "html"
+                documents.extend(docs)
             elif filename.endswith(".json"):
-                documents.extend(JSONLoader(file_path).load())
+                loader = JSONLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "json"
+                documents.extend(docs)
             elif filename.endswith(".md"):
-                documents.extend(UnstructuredMarkdownLoader(file_path).load())
+                loader = UnstructuredMarkdownLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "markdown"
+                documents.extend(docs)
             elif filename.endswith((".ppt", ".pptx")):
-                documents.extend(UnstructuredPowerPointLoader(file_path).load())
+                loader = UnstructuredPowerPointLoader(file_path)
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = filename
+                    doc.metadata["type"] = "powerpoint"
+                documents.extend(docs)
             else:
                 print(f"Format non supporté: {filename}")
         except Exception as e:
